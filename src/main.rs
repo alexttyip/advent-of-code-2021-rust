@@ -41,13 +41,15 @@ const DAY_FNS: [fn(); 25] = [
 ];
 
 fn scrape_input(day: usize) {
-    let mut file = OpenOptions::new()
+    let Ok(mut file) = OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open(format!("./inputs/day{day:02}.txt"))
-        .expect("Unable to open inputs dir or input file already exists");
+        .open(format!("./inputs/day{day:02}.txt")) else {
+            println!("Input file already exists");
+            return;
+        };
 
-    let url = format!("https://adventofcode.com/2019/day/{day}/input");
+    let url = format!("https://adventofcode.com/2021/day/{day}/input");
 
     let session = env::var("SESSION").expect("AoC session ID must be set");
 

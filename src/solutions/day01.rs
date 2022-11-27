@@ -1,23 +1,27 @@
 use itertools::Itertools;
 use std::fs;
 
-type InputType = Vec<String>;
+type InputType = Vec<u32>;
 
 fn read_input() -> InputType {
     fs::read_to_string("./inputs/day01.txt")
         .unwrap()
         .trim()
         .lines()
-        .map_into()
+        .map(|s| s.parse().unwrap())
         .collect()
 }
 
-fn part1(_input: InputType) -> i64 {
-    0
+fn part1(input: InputType) -> usize {
+    input.iter().tuple_windows().filter(|(a, b)| a < b).count()
 }
 
-fn part2(_input: InputType) -> i64 {
-    0
+fn part2(input: InputType) -> usize {
+    input
+        .iter()
+        .tuple_windows()
+        .filter(|(a, _, _, d)| a < d)
+        .count()
 }
 
 pub fn run() {
