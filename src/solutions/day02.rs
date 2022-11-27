@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::fs;
 
 type InputType = Vec<(String, i32)>;
