@@ -1,8 +1,11 @@
-use dotenv::dotenv;
+extern crate core;
+
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::Path;
 
+use dotenv::dotenv;
 use reqwest::{blocking, header::COOKIE};
 
 use crate::solutions::{
@@ -41,40 +44,52 @@ const DAY_FNS: [fn(); 25] = [
 ];
 
 fn scrape_input(day: usize) {
-    let Ok(mut file) = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(format!("./inputs/day{day:02}.txt")) else {
-            println!("Input file already exists");
-            return;
-        };
+    let path = format!("./inputs/day{day:02}.txt");
+
+    if Path::new(path.as_str()).exists() {
+        println!("Input file already exists");
+        return;
+    }
 
     let url = format!("https://adventofcode.com/2021/day/{day}/input");
 
     let session = env::var("SESSION").expect("AoC session ID must be set");
 
     let client = blocking::Client::new();
-    let input = client
+    let res = client
         .get(url)
         .header(COOKIE, format!("session={}", session))
         .send()
-        .and_then(|res| res.text())
-        .expect("Can't download input from AoC");
+        .expect("Error fetching input");
 
-    write!(file, "{}", input).expect("File writting failed");
+    if res.status().is_client_error() {
+        panic!("Error fetching input - client error");
+    } else if res.status().is_server_error() {
+        panic!("Error fetching input - server error");
+    }
+
+    let input = res.text().expect("Error fetching input");
+
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .expect("Cannot open input file")
+        .write_all(input.as_bytes())
+        .expect("Error writing input");
 }
 
 fn main() {
     dotenv().ok();
 
     let args: Vec<String> = env::args().collect();
+    let day = args.get(1)
+        .expect("Please provide a day number")
+        .parse::<usize>()
+        .expect("Argument is not a number");
 
-    if let Some(day_str) = args.get(1) {
-        if let Ok(day) = day_str.parse::<usize>() {
-            if let Some(day_fn) = DAY_FNS.get(day - 1) {
-                scrape_input(day);
-                day_fn();
-            }
-        }
-    }
+    let day_fn = DAY_FNS.get(day - 1).expect("Please pass a day number between 1 and 25");
+
+    scrape_input(day);
+    day_fn();
 }
